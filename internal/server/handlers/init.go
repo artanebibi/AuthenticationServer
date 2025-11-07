@@ -44,14 +44,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 		c.HTML(200, "home.html", nil)
 	})
 
-	r.GET("/register", func(c *gin.Context) {
-		c.HTML(200, "register.html", nil)
-	})
-
-	r.GET("/login", func(c *gin.Context) {
-		c.HTML(200, "login.html", nil)
-	})
-
 	// register
 	r.POST("/api/register", s.Register)
 
