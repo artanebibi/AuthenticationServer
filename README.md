@@ -1,6 +1,4 @@
-# Project AuthServer
-
-One Paragraph of project description goes here
+# Authentication Server
 
 ## Getting Started
 
