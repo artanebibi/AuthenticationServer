@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #ffeb3b 0%, #ff9800 30%, #ff5722 50%, #e91e63 70%, #9c27b0 90%, #673ab7 100%);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4.2' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E");
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ff9800;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ff9800 0%, #e91e63 50%, #9c27b0 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 152, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .register-link a {
+            color: #ff9800;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            border-color: #ef4444 !important;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .forgot-password a {
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .forgot-password a:hover {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Sign in to continue</p>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="usernameOrEmail">Username or Email</label>
+            <input type="text" id="usernameOrEmail" name="username_or_email" placeholder="Enter username or email" required>
+            <span class="error-message" id="usernameOrEmailError">Please enter your username or email</span>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <span class="error-message" id="passwordError">Please enter your password</span>
+        </div>
+
+        <div class="forgot-password">
+            <a href="#">Forgot password?</a>
+        </div>
+
+        <button type="submit">Sign In</button>
+    </form>
+
+    <div class="register-link">
+        Don't have an account? <a href="#">Create one</a>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('loginForm');
+
+    // Base64 encoding for ASCII characters
+    function safeBase64Encode(str) {
+        try {
+            return btoa(str);
+        } catch (e) {
+            console.error('Base64 encoding error:', e);
+            return null;
+        }
+    }
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const usernameOrEmail = document.getElementById('usernameOrEmail').value.trim();
+        const password = document.getElementById('password').value;
+
+        let isValid = true;
+
+        if (!usernameOrEmail) {
+            showError('usernameOrEmail', 'usernameOrEmailError');
+            isValid = false;
+        } else {
+            hideError('usernameOrEmail', 'usernameOrEmailError');
+        }
+
+        if (!password) {
+            showError('password', 'passwordError');
+            isValid = false;
+        } else {
+            hideError('password', 'passwordError');
+        }
+
+        if (isValid) {
+            // Base64 encode both fields
+            const encodedUsernameOrEmail = safeBase64Encode(usernameOrEmail);
+            const encodedPassword = safeBase64Encode(password);
+
+            // Check if encoding was successful
+            if (!encodedUsernameOrEmail || !encodedPassword) {
+                alert('Encoding failed! Check console for details.');
+                return;
+            }
+
+            const formData = {
+                identifier: encodedUsernameOrEmail,
+                password: encodedPassword
+            };
+
+            // Send POST request to backend
+            fetch('http://localhost:8080/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Login successful:', data);
+                    alert('Login successful!');
+                })
+                .catch(error => {
+                    console.error('Login error:', error);
+                    alert('Login failed: ' + error.message);
+                });
+        }
+    });
+
+    function showError(inputId, errorId) {
+        document.getElementById(inputId).classList.add('error');
+        document.getElementById(errorId).style.display = 'block';
+    }
+
+    function hideError(inputId, errorId) {
+        document.getElementById(inputId).classList.remove('error');
+        document.getElementById(errorId).style.display = 'none';
+    }
+</script>
+</body>
+</html>
