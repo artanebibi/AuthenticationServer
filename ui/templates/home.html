@@ -563,6 +563,152 @@
         .hidden {
             display: none !important;
         }
+
+        /* Verification Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .modal-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .verification-input-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .verification-digit {
+            width: 50px;
+            height: 60px;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .verification-digit:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .btn-verify {
+            flex: 1;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-verify:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .resend-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .resend-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .resend-link a:hover {
+            text-decoration: underline;
+        }
+
+        .modal-error {
+            background: #fee;
+            color: #c00;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -590,6 +736,36 @@
         </ul>
     </div>
 </nav>
+
+<!-- Verification Modal -->
+<div id="verificationModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-icon">📧</div>
+            <h2>Verify Your Email</h2>
+            <p>We've sent a 6-digit code to <strong id="verificationEmail"></strong></p>
+        </div>
+
+        <div class="verification-input-container">
+            <input type="text" maxlength="1" class="verification-digit" id="digit1" />
+            <input type="text" maxlength="1" class="verification-digit" id="digit2" />
+            <input type="text" maxlength="1" class="verification-digit" id="digit3" />
+            <input type="text" maxlength="1" class="verification-digit" id="digit4" />
+            <input type="text" maxlength="1" class="verification-digit" id="digit5" />
+            <input type="text" maxlength="1" class="verification-digit" id="digit6" />
+        </div>
+
+        <div class="modal-buttons">
+            <button class="btn-verify" id="verifyBtn">Verify Email</button>
+        </div>
+
+        <div class="resend-link">
+            Didn't receive the code? <a id="resendLink">Resend</a>
+        </div>
+
+        <div id="verificationError" class="modal-error hidden"></div>
+    </div>
+</div>
 
 <!-- Home Page -->
 <div id="homePage" class="page-content active">
@@ -721,6 +897,7 @@
 
     const SessionManager = {
         TOKEN_KEY: 'myapp_access_token',
+        EMAIL_KEY: 'myapp_pending_email',
 
         setToken(token) {
             sessionStorage.setItem(this.TOKEN_KEY, token);
@@ -736,6 +913,18 @@
 
         isAuthenticated() {
             return !!this.getToken();
+        },
+
+        setPendingEmail(email) {
+            sessionStorage.setItem(this.EMAIL_KEY, email);
+        },
+
+        getPendingEmail() {
+            return sessionStorage.getItem(this.EMAIL_KEY);
+        },
+
+        removePendingEmail() {
+            sessionStorage.removeItem(this.EMAIL_KEY);
         }
     };
 
@@ -786,6 +975,134 @@
                 method: 'POST',
                 body: JSON.stringify(data)
             });
+        }
+    };
+
+    // ============================================
+    // VERIFICATION MODAL MANAGEMENT
+    // ============================================
+
+    const VerificationModal = {
+        modal: document.getElementById('verificationModal'),
+        emailDisplay: document.getElementById('verificationEmail'),
+        verifyBtn: document.getElementById('verifyBtn'),
+        resendLink: document.getElementById('resendLink'),
+        errorDiv: document.getElementById('verificationError'),
+        digits: ['digit1', 'digit2', 'digit3', 'digit4', 'digit5', 'digit6'].map(id => document.getElementById(id)),
+
+        init() {
+            // Auto-focus next input on type
+            this.digits.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (e.target.value.length === 1 && index < 5) {
+                        this.digits[index + 1].focus();
+                    }
+                });
+
+                // Handle backspace
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        this.digits[index - 1].focus();
+                    }
+                });
+            });
+
+            this.verifyBtn.addEventListener('click', () => this.verify());
+            this.resendLink.addEventListener('click', () => this.resend());
+        },
+
+        show(email) {
+            this.emailDisplay.textContent = email;
+            this.modal.classList.remove('hidden');
+            this.clearInputs();
+            this.hideError();
+            this.digits[0].focus();
+        },
+
+        hide() {
+            this.modal.classList.add('hidden');
+        },
+
+        clearInputs() {
+            this.digits.forEach(input => input.value = '');
+        },
+
+        getCode() {
+            return this.digits.map(input => input.value).join('');
+        },
+
+        showError(message) {
+            this.errorDiv.textContent = message;
+            this.errorDiv.classList.remove('hidden');
+        },
+
+        hideError() {
+            this.errorDiv.classList.add('hidden');
+        },
+
+        async verify() {
+            const code = this.getCode();
+
+            if (code.length !== 6) {
+                this.showError('Please enter all 6 digits');
+                return;
+            }
+
+            this.verifyBtn.disabled = true;
+            this.verifyBtn.textContent = 'Verifying...';
+
+            try {
+                const response = await ApiClient.post('/verification-code', {
+                    verification_code: code
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.access_token) {
+                    SessionManager.setToken(data.access_token);
+                    SessionManager.removePendingEmail();
+                    updateUIForAuthState();
+                    this.hide();
+                    alert(data.message || 'Email verified successfully!');
+                    navigateTo('profile');
+                } else {
+                    this.showError(data.error || 'Invalid verification code');
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                this.showError('Verification failed. Please try again.');
+            } finally {
+                this.verifyBtn.disabled = false;
+                this.verifyBtn.textContent = 'Verify Email';
+            }
+        },
+
+        async resend() {
+            const email = SessionManager.getPendingEmail();
+            if (!email) {
+                this.showError('Email not found. Please register again.');
+                return;
+            }
+
+            try {
+                const response = await ApiClient.post('/resend-verification', {
+                    email: email
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Verification code resent! Check your email.');
+                    this.clearInputs();
+                    this.hideError();
+                    this.digits[0].focus();
+                } else {
+                    this.showError(data.error || 'Failed to resend code');
+                }
+            } catch (error) {
+                console.error('Resend error:', error);
+                this.showError('Failed to resend code. Please try again.');
+            }
         }
     };
 
@@ -901,7 +1218,12 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.access_token) {
+                if (response.ok && data.requires_verification) {
+                    // Show verification modal for login
+                    SessionManager.setPendingEmail(email);
+                    VerificationModal.show(email);
+                    loginForm.reset();
+                } else if (response.ok && data.access_token) {
                     SessionManager.setToken(data.access_token);
                     updateUIForAuthState();
                     alert(data.message || 'Login successful!');
@@ -1039,14 +1361,21 @@
                 const response = await ApiClient.post('/register', formData);
                 const data = await response.json();
 
-                if (response.ok && data.access_token) {
-                    SessionManager.setToken(data.access_token);
-                    updateUIForAuthState();
-                    alert(data.message || 'Registration successful!');
+                if (response.ok && data.requires_verification) {
+                    // Store email and show verification modal
+                    SessionManager.setPendingEmail(email);
+                    alert(data.message || 'Registration successful! Please check your email.');
                     registerForm.reset();
                     document.querySelectorAll('.requirement').forEach(req => {
                         req.classList.remove('met');
                     });
+                    VerificationModal.show(email);
+                } else if (response.ok && data.access_token) {
+                    // Old flow without verification
+                    SessionManager.setToken(data.access_token);
+                    updateUIForAuthState();
+                    alert(data.message || 'Registration successful!');
+                    registerForm.reset();
                     navigateTo('profile');
                 } else {
                     alert(data.error || 'Registration failed. Please try again.');
@@ -1067,7 +1396,6 @@
         const profileFullName = document.getElementById('profileFullName');
         const profileUsername = document.getElementById('profileUsername');
         const profileEmail = document.getElementById('profileEmail');
-        const profileUserId = document.getElementById('profileUserId');
         const profileCreatedAt = document.getElementById('profileCreatedAt');
         const profileError = document.getElementById('profileError');
 
@@ -1078,7 +1406,7 @@
 
             if (response.ok) {
                 const result = await response.json();
-                const userData = result.data || result; // Handle both wrapped and direct response
+                const userData = result.data || result;
 
                 const initials = userData.full_name
                     .split(' ')
@@ -1108,7 +1436,6 @@
             profileFullName.textContent = 'Error loading profile';
             profileUsername.textContent = '';
             profileEmail.textContent = 'Unable to load';
-            profileUserId.textContent = 'Unable to load';
             profileCreatedAt.textContent = 'Unable to load';
         }
     }
@@ -1130,9 +1457,12 @@
     // INITIALIZE APP
     // ============================================
 
+    VerificationModal.init();
     updateUIForAuthState();
 
     if (SessionManager.isAuthenticated()) {
         console.log('User is authenticated');
     }
 </script>
+</body>
+</html>

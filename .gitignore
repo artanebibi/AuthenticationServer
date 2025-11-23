@@ -13,3 +13,5 @@ tmp/
 
 main
 *templ.go
+credentials.json
+token.json

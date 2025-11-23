@@ -44,11 +44,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 		c.HTML(200, "home.html", nil)
 	})
 
-	// register
-	r.POST("/api/register", s.Register)
-
-	// login
-	r.POST("/api/login", s.Login)
+	r.POST("api/login", s.Login)
+	r.POST("api/register", s.Register)
+	r.POST("/api/verification-code", s.VerificationCode)
+	r.POST("/api/resend-verification", s.ResendVerificationCode)
 
 	// get user data
 	r.GET("/api/me", s.GetUserData)
